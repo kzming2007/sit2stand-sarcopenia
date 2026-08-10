@@ -1,0 +1,363 @@
+{
+  "provenance": {
+    "data_root": "D:\\Projects\\BioHealth_STS\\data\\public\\sit2stand-analysis",
+    "official_code_commit": "eb45993b1b9237a580dac8a4211a6473e722211f",
+    "movement_table_n": 560,
+    "final_cohort_ids_n": 405,
+    "available_npy_n": 629,
+    "processed_intersection_n": 456,
+    "tofix_n": 49,
+    "tocheck_n": 6,
+    "toremove_n": 13,
+    "realign_subjects_n": 41,
+    "realign_checkpoints_n": 59,
+    "direct_intervention_unique_n": 89,
+    "all_code_flags_unique_n": 108,
+    "direct_intervention_in_processed_n": 89,
+    "all_code_flags_in_processed_n": 104,
+    "runtime_seconds": 260.6020847999971
+  },
+  "cohorts": {
+    "movement_table_560_with_local_npy": {
+      "n": 456,
+      "author": {
+        "relaxed_count_success_n": 400,
+        "relaxed_count_success_rate": 0.8771929824561403,
+        "strict_count_success_n": 373,
+        "strict_count_success_rate": 0.8179824561403509,
+        "metrics_success_n": 456,
+        "mae_vs_dataMovement": {
+          "time": 1.5295159213242944e-09,
+          "time_sit2stand": 2.590028009923985e-10,
+          "time_stand2sit": 4.0154050655887715e-10,
+          "trunk_lean_max": 2.4719151201580054e-08,
+          "right_knee_range_mean": 3.116124337123332e-09,
+          "right_hip_range_mean": 3.891600881700653e-09
+        }
+      },
+      "fixed": {
+        "relaxed_count_success_n": 400,
+        "relaxed_count_success_rate": 0.8771929824561403,
+        "strict_count_success_n": 373,
+        "strict_count_success_rate": 0.8179824561403509,
+        "metrics_success_n": 456,
+        "mae_vs_dataMovement": {
+          "time": 0.004608554145053775,
+          "time_sit2stand": 0.09143680514579794,
+          "time_stand2sit": 0.08715752895685434,
+          "trunk_lean_max": 0.02148867731271228,
+          "right_knee_range_mean": 0.05842927750661822,
+          "right_hip_range_mean": 0.03407318061256567
+        }
+      },
+      "auto": {
+        "relaxed_count_success_n": 426,
+        "relaxed_count_success_rate": 0.9342105263157895,
+        "strict_count_success_n": 387,
+        "strict_count_success_rate": 0.8486842105263158,
+        "metrics_success_n": 426,
+        "mae_vs_dataMovement": {
+          "time": 0.25266419384129024,
+          "time_sit2stand": 0.5246764690234993,
+          "time_stand2sit": 0.5069468046496828,
+          "trunk_lean_max": 0.2699209564823833,
+          "right_knee_range_mean": 1.087652963746408,
+          "right_hip_range_mean": 0.6202123420962606
+        }
+      },
+      "auto_selection_status": {
+        "single_run": 405,
+        "no_candidate": 30,
+        "ambiguous_multiple_runs": 17,
+        "fragile_single_candidate": 4
+      },
+      "realign_checkpoints": {
+        "n_subjects": 41,
+        "n_checkpoints": 59,
+        "fixed_mae_frames": 21.949152542372882,
+        "fixed_median_frames": 18.0,
+        "fixed_mae_seconds": 0.6849248538188022,
+        "fixed_within_3_frames_rate": 0.0,
+        "paired_available_n": 57,
+        "auto_mae_frames": 15.017543859649123,
+        "auto_median_frames": 11.0,
+        "auto_mae_seconds": 0.44581160502787087,
+        "auto_within_3_frames_rate": 0.2807017543859649,
+        "auto_improved_n": 29,
+        "auto_equal_n": 12,
+        "auto_worsened_n": 16
+      }
+    },
+    "final_cohort_405_with_local_npy": {
+      "n": 324,
+      "author": {
+        "relaxed_count_success_n": 291,
+        "relaxed_count_success_rate": 0.8981481481481481,
+        "strict_count_success_n": 283,
+        "strict_count_success_rate": 0.8734567901234568,
+        "metrics_success_n": 324,
+        "mae_vs_dataMovement": {
+          "time": 1.4448271193996853e-09,
+          "time_sit2stand": 2.240441803274067e-10,
+          "time_stand2sit": 2.9769531421593766e-10,
+          "trunk_lean_max": 2.513916883715326e-08,
+          "right_knee_range_mean": 2.508586962300269e-09,
+          "right_hip_range_mean": 3.1782587645366613e-09
+        }
+      },
+      "fixed": {
+        "relaxed_count_success_n": 291,
+        "relaxed_count_success_rate": 0.8981481481481481,
+        "strict_count_success_n": 283,
+        "strict_count_success_rate": 0.8734567901234568,
+        "metrics_success_n": 324,
+        "mae_vs_dataMovement": {
+          "time": 0.005044342988040224,
+          "time_sit2stand": 0.10158079041062572,
+          "time_stand2sit": 0.0965364489143521,
+          "trunk_lean_max": 0.02713927880301577,
+          "right_knee_range_mean": 0.05406832093079357,
+          "right_hip_range_mean": 0.032285018063845025
+        }
+      },
+      "auto": {
+        "relaxed_count_success_n": 307,
+        "relaxed_count_success_rate": 0.9475308641975309,
+        "strict_count_success_n": 291,
+        "strict_count_success_rate": 0.8981481481481481,
+        "metrics_success_n": 307,
+        "mae_vs_dataMovement": {
+          "time": 0.21546002163909886,
+          "time_sit2stand": 0.44833306117592747,
+          "time_stand2sit": 0.4053657748306798,
+          "trunk_lean_max": 0.2394512011672645,
+          "right_knee_range_mean": 0.6820163937726545,
+          "right_hip_range_mean": 0.4477531198916938
+        }
+      },
+      "auto_selection_status": {
+        "single_run": 290,
+        "no_candidate": 17,
+        "ambiguous_multiple_runs": 15,
+        "fragile_single_candidate": 2
+      },
+      "realign_checkpoints": {
+        "n_subjects": 36,
+        "n_checkpoints": 53,
+        "fixed_mae_frames": 18.452830188679247,
+        "fixed_median_frames": 16.0,
+        "fixed_mae_seconds": 0.6209844534307934,
+        "fixed_within_3_frames_rate": 0.0,
+        "paired_available_n": 51,
+        "auto_mae_frames": 9.901960784313726,
+        "auto_median_frames": 8.0,
+        "auto_mae_seconds": 0.3383172214236107,
+        "auto_within_3_frames_rate": 0.3137254901960784,
+        "auto_improved_n": 29,
+        "auto_equal_n": 11,
+        "auto_worsened_n": 11
+      }
+    },
+    "final_npy_excluding_code_flags": {
+      "n": 250,
+      "author": {
+        "relaxed_count_success_n": 235,
+        "relaxed_count_success_rate": 0.94,
+        "strict_count_success_n": 229,
+        "strict_count_success_rate": 0.916,
+        "metrics_success_n": 250,
+        "mae_vs_dataMovement": {
+          "time": 1.4154290575163485e-09,
+          "time_sit2stand": 2.2464583526726756e-10,
+          "time_stand2sit": 2.862336172526625e-10,
+          "trunk_lean_max": 2.521095166230225e-08,
+          "right_knee_range_mean": 2.553617036937794e-09,
+          "right_hip_range_mean": 3.2829317149207783e-09
+        }
+      },
+      "fixed": {
+        "relaxed_count_success_n": 235,
+        "relaxed_count_success_rate": 0.94,
+        "strict_count_success_n": 229,
+        "strict_count_success_rate": 0.916,
+        "metrics_success_n": 250,
+        "mae_vs_dataMovement": {
+          "time": 1.4154290575163485e-09,
+          "time_sit2stand": 2.2464583526726756e-10,
+          "time_stand2sit": 2.862336172526625e-10,
+          "trunk_lean_max": 2.521095166230225e-08,
+          "right_knee_range_mean": 2.553617036937794e-09,
+          "right_hip_range_mean": 3.2829317149207783e-09
+        }
+      },
+      "auto": {
+        "relaxed_count_success_n": 240,
+        "relaxed_count_success_rate": 0.96,
+        "strict_count_success_n": 232,
+        "strict_count_success_rate": 0.928,
+        "metrics_success_n": 240,
+        "mae_vs_dataMovement": {
+          "time": 0.18782545513038276,
+          "time_sit2stand": 0.4253515017420019,
+          "time_stand2sit": 0.3822915485609869,
+          "trunk_lean_max": 0.19825606571886295,
+          "right_knee_range_mean": 0.5142399552732254,
+          "right_hip_range_mean": 0.40197538611770334
+        }
+      },
+      "auto_selection_status": {
+        "single_run": 228,
+        "ambiguous_multiple_runs": 11,
+        "no_candidate": 10,
+        "fragile_single_candidate": 1
+      }
+    },
+    "direct_intervention_records": {
+      "n": 89,
+      "author": {
+        "relaxed_count_success_n": 69,
+        "relaxed_count_success_rate": 0.7752808988764045,
+        "strict_count_success_n": 65,
+        "strict_count_success_rate": 0.7303370786516854,
+        "metrics_success_n": 89,
+        "mae_vs_dataMovement": {
+          "time": 1.5228817857197162e-09,
+          "time_sit2stand": 2.3068732442390754e-10,
+          "time_stand2sit": 3.7950683295055444e-10,
+          "trunk_lean_max": 2.450327637172981e-08,
+          "right_knee_range_mean": 2.3027545213981387e-09,
+          "right_hip_range_mean": 4.097047016256092e-09
+        }
+      },
+      "fixed": {
+        "relaxed_count_success_n": 69,
+        "relaxed_count_success_rate": 0.7752808988764045,
+        "strict_count_success_n": 65,
+        "strict_count_success_rate": 0.7303370786516854,
+        "metrics_success_n": 89,
+        "mae_vs_dataMovement": {
+          "time": 0.02361236099125551,
+          "time_sit2stand": 0.46848520279673883,
+          "time_stand2sit": 0.44655992196628347,
+          "trunk_lean_max": 0.11009918835343202,
+          "right_knee_range_mean": 0.2993679699664086,
+          "right_hip_range_mean": 0.17457717920670934
+        }
+      },
+      "auto": {
+        "relaxed_count_success_n": 80,
+        "relaxed_count_success_rate": 0.898876404494382,
+        "strict_count_success_n": 68,
+        "strict_count_success_rate": 0.7640449438202247,
+        "metrics_success_n": 80,
+        "mae_vs_dataMovement": {
+          "time": 0.17811064834100643,
+          "time_sit2stand": 0.5870291259610881,
+          "time_stand2sit": 0.5459519044427379,
+          "trunk_lean_max": 0.2730487637379113,
+          "right_knee_range_mean": 1.0969833939037934,
+          "right_hip_range_mean": 0.4288250275339208
+        }
+      },
+      "auto_selection_status": {
+        "single_run": 75,
+        "no_candidate": 9,
+        "ambiguous_multiple_runs": 4,
+        "fragile_single_candidate": 1
+      },
+      "realign_checkpoints": {
+        "n_subjects": 41,
+        "n_checkpoints": 59,
+        "fixed_mae_frames": 21.949152542372882,
+        "fixed_median_frames": 18.0,
+        "fixed_mae_seconds": 0.6849248538188022,
+        "fixed_within_3_frames_rate": 0.0,
+        "paired_available_n": 57,
+        "auto_mae_frames": 15.017543859649123,
+        "auto_median_frames": 11.0,
+        "auto_mae_seconds": 0.44581160502787087,
+        "auto_within_3_frames_rate": 0.2807017543859649,
+        "auto_improved_n": 29,
+        "auto_equal_n": 12,
+        "auto_worsened_n": 16
+      }
+    },
+    "realign_records": {
+      "n": 41,
+      "author": {
+        "relaxed_count_success_n": 37,
+        "relaxed_count_success_rate": 0.9024390243902439,
+        "strict_count_success_n": 37,
+        "strict_count_success_rate": 0.9024390243902439,
+        "metrics_success_n": 41,
+        "mae_vs_dataMovement": {
+          "time": 1.9568122948568287e-09,
+          "time_sit2stand": 2.5304278997365565e-10,
+          "time_stand2sit": 4.647040584316295e-10,
+          "trunk_lean_max": 2.1607369595452526e-08,
+          "right_knee_range_mean": 2.3520581471640936e-09,
+          "right_hip_range_mean": 4.2244578350352926e-09
+        }
+      },
+      "fixed": {
+        "relaxed_count_success_n": 37,
+        "relaxed_count_success_rate": 0.9024390243902439,
+        "strict_count_success_n": 37,
+        "strict_count_success_rate": 0.9024390243902439,
+        "metrics_success_n": 41,
+        "mae_vs_dataMovement": {
+          "time": 0.039862603420252433,
+          "time_sit2stand": 0.985623570050863,
+          "time_stand2sit": 0.9457609684783337,
+          "trunk_lean_max": 0.23778594785057394,
+          "right_knee_range_mean": 0.4807984143978275,
+          "right_hip_range_mean": 0.26864409319402804
+        }
+      },
+      "auto": {
+        "relaxed_count_success_n": 39,
+        "relaxed_count_success_rate": 0.9512195121951219,
+        "strict_count_success_n": 38,
+        "strict_count_success_rate": 0.926829268292683,
+        "metrics_success_n": 39,
+        "mae_vs_dataMovement": {
+          "time": 0.1928338211960366,
+          "time_sit2stand": 0.6804110052143169,
+          "time_stand2sit": 0.6900257318943056,
+          "trunk_lean_max": 0.29388042741391673,
+          "right_knee_range_mean": 1.5375351073472379,
+          "right_hip_range_mean": 0.28676235561221464
+        }
+      },
+      "auto_selection_status": {
+        "single_run": 36,
+        "ambiguous_multiple_runs": 2,
+        "no_candidate": 2,
+        "fragile_single_candidate": 1
+      },
+      "realign_checkpoints": {
+        "n_subjects": 41,
+        "n_checkpoints": 59,
+        "fixed_mae_frames": 21.949152542372882,
+        "fixed_median_frames": 18.0,
+        "fixed_mae_seconds": 0.6849248538188022,
+        "fixed_within_3_frames_rate": 0.0,
+        "paired_available_n": 57,
+        "auto_mae_frames": 15.017543859649123,
+        "auto_median_frames": 11.0,
+        "auto_mae_seconds": 0.44581160502787087,
+        "auto_within_3_frames_rate": 0.2807017543859649,
+        "auto_improved_n": 29,
+        "auto_equal_n": 12,
+        "auto_worsened_n": 16
+      }
+    }
+  },
+  "processing_errors": {},
+  "limits": [
+    "realign supplies partial sitting-boundary checkpoints, not complete human-annotated STS boundaries",
+    "indexed checkpoints may be ambiguous when a candidate detects a different number or order of sitting events",
+    "dataMovement metrics reflect the author pipeline and interventions, not external motion-capture ground truth",
+    "matching five repetitions does not establish boundary accuracy"
+  ]
+}
