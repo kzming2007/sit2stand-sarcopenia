@@ -69,6 +69,11 @@ QUALITY_KINEMATIC = [
     # 체간 전방경사 — 하지 근력 부족의 보상 동작. Boswell 2023 에서 OA 와 유의
     "trunk_lean_max",
     "trunk_lean_range_mean",
+    # 주의 — 이 열은 이름과 달리 **각가속도가 아니라 각속도**다.
+    # 논문 공개 코드 utils.py:394 가 acc 대신 vel 의 평균을 반환하며,
+    # dataClean.csv 의 `*_ang_acc` 11개 열이 대응 `*_ang_vel` 열과 값이 동일함을
+    # 2026-08-10 실측 확인했다. 수치는 그대로 유효하나 **표기는 `체간 각속도`** 다.
+    # 상세: docs/20260810_MediaPipe파이프라인_및_논문코드검증.md §3-①, §4
     "trunk_lean_ang_acc",       # Boswell 2023: 50세+ 정신건강과 연관 (R=0.28)
     # 관절 각속도 — Chan 2026 에서 무릎 OA 시공간 바이오마커
     "left_knee_ang_vel",
