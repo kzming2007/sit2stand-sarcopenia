@@ -415,8 +415,43 @@ def alcazar_power(height_cm, weight_kg, chair_h_cm, total_time_s,
             "alcazar_rel_power_Wkg": float(p / weight_kg)}
 
 
+def select_magnitude(res, framerate, expected_reps=5, grid=None):
+    """평활 강도 `magnitude` 를 자동 선택한다.
+
+    왜 필요한가 — 논문은 이 값을 피험자별로 손으로 바꿨다(`k4Zz5q1I` 0.1,
+    `9qluCnOn` 0.2 등). 560명 중 103명(18%)에 수동 개입이 필요했던 주된 이유이며,
+    자동 파이프라인의 실사용을 막는 지점이다.
+
+    **순환논리가 아닌 이유**: 여기서 맞추는 것은 `반복 횟수`다. 반복 횟수는
+    프로토콜이 사전에 정한 사실이지(5회 수행하도록 지시함) 측정 결과가 아니다.
+    시간·각도 같은 **결과 지표는 선택에 전혀 쓰지 않는다.**
+
+    반환: (magnitude, 후보 개수). 맞는 값이 없으면 (None, 0).
+    """
+    if grid is None:
+        grid = np.geomspace(0.02, 2.0, 30)
+    hits = [m for m in grid
+            if (lambda u, d: len(u) == expected_reps
+                and len(d) in (expected_reps, expected_reps + 1))(
+                    *get_segments(res, framerate=framerate, magnitude=m))]
+    if not hits:
+        return None, 0
+    # 연속 구간 중 가장 넓은 곳의 기하중앙값을 고른다. 경계값보다 안정적이다.
+    runs, cur = [], [hits[0]]
+    for a, b in zip(hits, hits[1:]):
+        if b / a < 1.35:
+            cur.append(b)
+        else:
+            runs.append(cur)
+            cur = [b]
+    runs.append(cur)
+    best = max(runs, key=len)
+    return float(np.exp(np.mean(np.log(best)))), len(hits)
+
+
 def compute_metrics(traj, framerate=30, magnitude=1.0, zero_lag=False,
                     paper_compat=True, flip_y=True, auto_orientation=True,
+                    expected_reps=None,
                     height_cm=None, weight_kg=None, chair_h_cm=None):
     """궤적 (프레임, 75) -> 지표 dict. process_subject 의 순서를 그대로 따른다."""
     res = np.asarray(traj, dtype=float).copy()
@@ -443,10 +478,31 @@ def compute_metrics(traj, framerate=30, magnitude=1.0, zero_lag=False,
 
     # 4) 1차 정규화 -> 5) 국면 분할 (평활 이전)
     res = center_ts(res)
+
+    qc = {}
+    if expected_reps:
+        sel, n_hit = select_magnitude(res, framerate, expected_reps)
+        qc["magnitude_candidates"] = n_hit
+        if sel is None:
+            qc["ok"] = False
+            qc["reason"] = (f"어떤 평활 강도에서도 기립 {expected_reps}회가 "
+                            f"검출되지 않는다")
+        else:
+            magnitude = sel
+            qc["magnitude_selected"] = round(sel, 4)
+    qc["magnitude_used"] = round(float(magnitude), 4)
+
     ups, downs = get_segments(res, framerate=framerate, magnitude=magnitude)
 
     out = {"orientation": orientation, "framerate": framerate,
            "n_ups": len(ups), "n_downs": len(downs)}
+    if expected_reps:
+        qc.setdefault("ok", len(ups) == expected_reps
+                      and len(downs) in (expected_reps, expected_reps + 1))
+        if not qc.get("reason") and not qc["ok"]:
+            qc["reason"] = (f"기립 {len(ups)}회 / 착석 {len(downs)}회 — "
+                            f"기대 {expected_reps}/{expected_reps + 1}")
+        out["qc"] = qc
     if len(downs) < 2 or len(ups) < 4:
         out["error"] = (f"국면 분할 실패 — 기립 {len(ups)}회 / 착석 {len(downs)}회")
         return out

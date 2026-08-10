@@ -203,7 +203,12 @@ def main():
     ap.add_argument("--json", help="지표 .json 저장 경로")
     ap.add_argument("--zero-lag", action="store_true",
                     help="filtfilt 사용 (자체 데이터에는 이쪽을 권장)")
-    ap.add_argument("--mirror", action="store_true", help="좌우 미러링")
+    ap.add_argument("--reps", type=int, default=5,
+                    help="프로토콜상 반복 횟수. 평활 강도를 이 횟수가 나오도록 "
+                         "자동 선택하고 QC 판정을 낸다. 0 이면 자동 선택을 끈다")
+    ap.add_argument("--no-auto-orientation", action="store_true",
+                    help="촬영 방향 자동 판정을 끈다 (진단용). 기본은 켜짐 — "
+                         "중앙고관절과 무릎의 x 위치로 좌/우를 판정해 정렬한다")
     ap.add_argument("--height", type=float, help="신장 cm — Alcazar 파워 입력")
     ap.add_argument("--weight", type=float, help="체중 kg")
     ap.add_argument("--chair", type=float, help="의자 좌면 높이 cm")
@@ -231,7 +236,9 @@ def main():
     print(f"\n[2/3] 전처리 — 보간 -> 6Hz Butterworth"
           f"({'filtfilt' if a.zero_lag else 'lfilter'}) -> 정규화")
     print("[3/3] 국면 분할 및 지표 산출")
-    m = compute_metrics(traj, framerate=fps, zero_lag=a.zero_lag, mirror=a.mirror,
+    m = compute_metrics(traj, framerate=fps, zero_lag=a.zero_lag,
+                        auto_orientation=not a.no_auto_orientation,
+                        expected_reps=a.reps,
                         height_cm=a.height, weight_kg=a.weight, chair_h_cm=a.chair)
 
     if "error" in m:
@@ -243,6 +250,14 @@ def main():
     print("\n" + "=" * 58)
     print("STS 지표")
     print("=" * 58)
+    q = m.get("qc")
+    if q:
+        mark = "통과" if q.get("ok") else "실패"
+        print(f"  [QC] {mark}  평활강도 {q.get('magnitude_used')} "
+              f"(후보 {q.get('magnitude_candidates', 0)}개)")
+        if not q.get("ok"):
+            print(f"       {q.get('reason', '')}")
+            print("       -> 이 시행의 지표는 신뢰할 수 없다. 제외하거나 재촬영할 것.")
     print(f"  검출 반복        : 기립 {m['n_ups']}회 / 착석 {m['n_downs']}회")
     print(f"  5STS 총 시간     : {m.get('time', float('nan')):.2f} 초")
     print(f"    일어서기 국면  : {m.get('time_sit2stand', float('nan')):.2f} 초")
