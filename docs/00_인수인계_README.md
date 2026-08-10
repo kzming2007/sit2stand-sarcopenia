@@ -11,7 +11,7 @@
 새 Claude 세션을 열고 아래를 **그대로 붙여넣는다.**
 
 ```
-D:\claude\바헬 에서 2026 바이오헬스 경진대회 연구를 이어서 진행한다.
+D:\claude\sit2stand-sarcopenia 에서 2026 바이오헬스 경진대회 연구를 이어서 진행한다.
 
 이전 세션의 대화 이력이 계정 만료로 사라졌다. 다음 파일들을 먼저 읽어라:
 1. docs/00_인수인계_README.md            ← 현재 상태와 함정. 반드시 먼저
@@ -26,7 +26,7 @@ D:\claude\바헬 에서 2026 바이오헬스 경진대회 연구를 이어서 �
 **폴더 구조**
 
 ```
-D:\claude\바헬\
+D:\claude\sit2stand-sarcopenia\
   docs/                     문서 (md, pdf) — 새 문서도 여기에 생성
   scripts/                  분석·검증 스크립트
   results/                  분석 산출물 (csv, png)
@@ -157,7 +157,7 @@ P = F × v ,  상대파워 = P / 체중 (W/kg)
 
 ```
 PC   : RTX 5060 / Ryzen 5 7500F 6코어 / RAM 32GB  → Body Tracking SDK 요구사항 충족
-경로 : D:\claude\바헬
+경로 : D:\claude\sit2stand-sarcopenia
 npy  : sit2stand-analysis-main/videos/np/ 에 629개 (videometa.pkl 등록은 767개)
 ```
 
