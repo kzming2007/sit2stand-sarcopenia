@@ -7,6 +7,10 @@ k4abt_sdk/
 # 원 저장소가 이미 공개돼 있으므로 링크로 대체한다.
 sit2stand-analysis-main/
 
+# MediaPipe 모델 (9.4MB). 재배포 대신 아래 명령으로 받는다.
+#   python scripts/mediapipe_pose.py --download-model
+models/
+
 # ── 산출물 / 로컬 ──────────────────────────────────────────
 scratch/
 *.mkv

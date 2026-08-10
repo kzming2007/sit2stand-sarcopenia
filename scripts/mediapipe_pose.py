@@ -106,6 +106,30 @@ def landmarks_to_body25(lms, width, height):
     return row
 
 
+def _is_ascii(s):
+    try:
+        s.encode("ascii")
+        return True
+    except UnicodeEncodeError:
+        return False
+
+
+def _ascii_copy(path):
+    """비ASCII 경로면 임시 ASCII 경로로 복사한 뒤 그 경로를 준다.
+
+    이 저장소 경로에는 한글이 들어 있다(`D:\\claude\\바헬`). OpenCV 의
+    VideoCapture 는 Windows 에서 비ASCII 경로를 열지 못하는 경우가 있다.
+    """
+    if _is_ascii(os.path.abspath(path)):
+        return path, None
+    import shutil
+    import tempfile
+    d = tempfile.mkdtemp(prefix="sts_")
+    dst = os.path.join(d, "input" + os.path.splitext(path)[1])
+    shutil.copy2(path, dst)
+    return dst, d
+
+
 def extract(video, kind="full", min_conf=0.5, progress=True):
     """영상 -> (궤적 (프레임,75), framerate, 검출 프레임 수)."""
     import cv2
@@ -119,14 +143,24 @@ def extract(video, kind="full", min_conf=0.5, progress=True):
             f"모델이 없다: {mp_path}\n"
             f"  python scripts/mediapipe_pose.py --download-model --model {kind}")
 
-    cap = cv2.VideoCapture(video)
+    # 모델은 경로 대신 **바이트로 전달**한다. MediaPipe 의 네이티브 로더는
+    # Windows 에서 비ASCII 경로를 열지 못해 FileNotFoundError 가 난다.
+    # 파일 읽기는 Python 이 하므로 한글 경로도 문제가 없다.
+    with open(mp_path, "rb") as f:
+        model_bytes = f.read()
+
+    video_path, tmpdir = _ascii_copy(video)
+    if tmpdir:
+        print(f"      (한글 경로 회피용 임시 복사: {video_path})")
+
+    cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
         raise RuntimeError(f"영상을 열 수 없다: {video}")
     fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
     total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT) or 0)
 
     opts = vision.PoseLandmarkerOptions(
-        base_options=mp_python.BaseOptions(model_asset_path=mp_path),
+        base_options=mp_python.BaseOptions(model_asset_buffer=model_bytes),
         running_mode=vision.RunningMode.VIDEO,
         num_poses=1,
         min_pose_detection_confidence=min_conf,
@@ -152,6 +186,11 @@ def extract(video, kind="full", min_conf=0.5, progress=True):
             if progress and total and i % 60 == 0:
                 print(f"      {i}/{total} 프레임  검출 {n_det}", flush=True)
     cap.release()
+    if tmpdir:
+        import shutil
+        shutil.rmtree(tmpdir, ignore_errors=True)
+    if not rows:
+        raise RuntimeError(f"프레임을 한 장도 읽지 못했다: {video}")
     return np.vstack(rows), float(fps), n_det
 
 
