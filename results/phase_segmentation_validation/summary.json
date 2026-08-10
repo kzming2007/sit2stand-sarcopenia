@@ -1,6 +1,6 @@
 {
   "provenance": {
-    "data_root": "D:\\Projects\\BioHealth_STS\\data\\public\\sit2stand-analysis",
+    "data_root_name": "sit2stand-analysis",
     "official_code_commit": "eb45993b1b9237a580dac8a4211a6473e722211f",
     "movement_table_n": 560,
     "final_cohort_ids_n": 405,

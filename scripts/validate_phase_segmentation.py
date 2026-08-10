@@ -7,7 +7,7 @@ partial reference checkpoints: 59 manually set sitting frames for 41 subjects.
 Example
 -------
 python scripts/validate_phase_segmentation.py \
-  --data-root D:/Projects/BioHealth_STS/data/public/sit2stand-analysis \
+  --data-root sit2stand-analysis-main \
   --output results/phase_segmentation_validation
 """
 
@@ -508,7 +508,7 @@ def validate(data_root: Path, output: Path, limit: int | None = None) -> dict[st
     auto_subset = final_npy[~final_npy["code_flagged"]].copy()
     summary = {
         "provenance": {
-            "data_root": str(data_root.resolve()),
+            "data_root_name": data_root.name,
             "official_code_commit": _git_head(data_root),
             "movement_table_n": int(len(movement)),
             "final_cohort_ids_n": int(len(clean_ids)),

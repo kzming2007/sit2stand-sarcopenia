@@ -586,22 +586,22 @@ def validate(root, n_files, zero_lag, verbose):
     ref = dm.set_index(dm[idc].astype(str))
     ref = ref[~ref.index.duplicated(keep="first")]
 
-    # 논문은 일부 피험자에 수동 보정을 넣었다 (구간 지정 tofix, 착석시점 교정 realign,
-    # 검토·제외 대상 tocheck/toremove). 본 구현은 이를 적용하지 않으므로 분리해 본다.
+    # 공식 코드의 직접 처리(tofix/realign)와 검토·제외(tocheck/toremove) 목록을
+    # 함께 표시한다. 성격이 다르므로 전체를 수동 보정군으로 해석하지 않는다.
     # utils.py 는 matplotlib·cv2 를 끌어오므로 import 하지 않고 정규식으로 읽는다.
     # edits.py 는 순수 자료라 직접 import 한다. 둘 다 실패해도 검증은 진행된다.
-    manual = set()
+    code_flags = set()
     try:
         import re                                          # noqa: PLC0415
         src = open(os.path.join(root, "utils.py"), encoding="utf-8").read()
-        manual |= set(re.findall(r'"([A-Za-z0-9]{8})"\s*:',
-                                 src[src.index("realign = {"):]))
+        code_flags |= set(re.findall(r'"([A-Za-z0-9]{8})"\s*:',
+                                     src[src.index("realign = {"):]))
     except Exception:                                      # noqa: BLE001
         pass
     try:
         sys.path.insert(0, os.path.abspath(root))
         from edits import tocheck, tofix, toremove         # noqa: PLC0415
-        manual |= set(tofix) | set(tocheck) | set(toremove)
+        code_flags |= set(tofix) | set(tocheck) | set(toremove)
     except Exception:                                      # noqa: BLE001
         pass
 
@@ -629,7 +629,7 @@ def validate(root, n_files, zero_lag, verbose):
             if verbose:
                 print(f"  [실패] {sid}: {m['error']}")
             continue
-        row = {"sid": sid, "manual": sid in manual}
+        row = {"sid": sid, "code_flagged": sid in code_flags}
         for k, _ in VALIDATE_KEYS:
             row[f"{k}_mine"] = m.get(k, np.nan)
             row[f"{k}_ref"] = pd.to_numeric(r.get(k, np.nan), errors="coerce")
@@ -669,16 +669,16 @@ def validate(root, n_files, zero_lag, verbose):
 
     print(f"\n처리 실패 {failed} · 기준값 없음 {skipped} · "
           f"필터 {'filtfilt' if zero_lag else 'lfilter'} · "
-          f"수동 보정 대상 {int(df['manual'].sum())}건\n")
-    clean = df[~df["manual"]]
+          f"코드 표시 대상 {int(df['code_flagged'].sum())}건\n")
+    clean = df[~df["code_flagged"]]
     if len(clean) >= 3:
-        report(clean, "논문이 수동 보정하지 않은 피험자")
-    if df["manual"].any():
-        report(df[df["manual"]], "논문이 수동 보정한 피험자 (본 구현은 미적용)")
+        report(clean, "공식 코드 표시 목록에 없는 피험자")
+    if df["code_flagged"].any():
+        report(df[df["code_flagged"]], "공식 코드 표시 목록에 있는 피험자")
     report(df, "전체")
     print("  * 시간 허용오차 0.1초는 계획서 §3.2 의 G1 기준이다.")
-    print("  * 수동 보정군의 오차는 구현 오류가 아니라 논문의 피험자별 개입"
-          " 미적용에서 온다.")
+    print("  * 표시군에는 직접 처리, 검토, 제외 목록이 섞여 있어 개별 오차 원인은"
+          " 별도 확인이 필요하다.")
     return 0
 
 

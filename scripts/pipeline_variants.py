@@ -186,34 +186,34 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--recompute", action="store_true")
     ap.add_argument("--repeats", type=int, default=10)
-    ap.add_argument("--exclude-manual", action="store_true",
-                    help="논문이 피험자별 수동 보정을 넣은 대상을 제외한다. "
-                         "본 구현은 그 개입을 적용하지 않으므로, 원본 열과의 "
-                         "직접 대조에는 이쪽이 타당하다")
+    ap.add_argument("--exclude-code-flags", "--exclude-manual",
+                    dest="exclude_code_flags", action="store_true",
+                    help="공식 코드의 처리·검토·제외 목록에 표시된 대상을 제외한다. "
+                         "--exclude-manual은 이전 명령 호환용 별칭이다")
     a = ap.parse_args()
 
     dc = load_cohort()
     feat = compute_all(dc, a.recompute)
 
-    if a.exclude_manual:
-        manual = set()
+    if a.exclude_code_flags:
+        code_flags = set()
         try:
             import re
             src = open(f"{ROOT}/utils.py", encoding="utf-8").read()
-            manual |= set(re.findall(r'"([A-Za-z0-9]{8})"\s*:',
-                                     src[src.index("realign = {"):]))
+            code_flags |= set(re.findall(r'"([A-Za-z0-9]{8})"\s*:',
+                                         src[src.index("realign = {"):]))
         except Exception:                                      # noqa: BLE001
             pass
         try:
             sys.path.insert(0, os.path.abspath(ROOT))
             from edits import tocheck, tofix, toremove          # noqa: PLC0415
-            manual |= set(tofix) | set(tocheck) | set(toremove)
+            code_flags |= set(tofix) | set(tocheck) | set(toremove)
         except Exception:                                      # noqa: BLE001
             pass
         before = feat["subjectid"].nunique()
-        feat = feat[~feat["subjectid"].isin(manual)]
-        dc = dc[~dc["subjectid"].isin(manual)]
-        print(f"수동 보정 대상 제외: {before} -> {feat['subjectid'].nunique()}명")
+        feat = feat[~feat["subjectid"].isin(code_flags)]
+        dc = dc[~dc["subjectid"].isin(code_flags)]
+        print(f"코드 표시 대상 제외: {before} -> {feat['subjectid'].nunique()}명")
 
     keep = ["subjectid"] + DEMO + ["time", "GPH_TScore", "OA_check"]
     base = dc[keep].copy()
