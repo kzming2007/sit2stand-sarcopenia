@@ -206,6 +206,10 @@ def main():
     ap.add_argument("--reps", type=int, default=5,
                     help="프로토콜상 반복 횟수. 평활 강도를 이 횟수가 나오도록 "
                          "자동 선택하고 QC 판정을 낸다. 0 이면 자동 선택을 끈다")
+    ap.add_argument("--no-trim", action="store_true",
+                    help="준비·정리 구간 자동 제거를 끈다. 기본은 켜짐 — "
+                         "녹화 버튼을 누르고 걸어가 앉는 시간이 극값 검출을 "
+                         "망치므로 활동 구간만 남긴다")
     ap.add_argument("--no-auto-orientation", action="store_true",
                     help="촬영 방향 자동 판정을 끈다 (진단용). 기본은 켜짐 — "
                          "중앙고관절과 무릎의 x 위치로 좌/우를 판정해 정렬한다")
@@ -238,7 +242,7 @@ def main():
     print("[3/3] 국면 분할 및 지표 산출")
     m = compute_metrics(traj, framerate=fps, zero_lag=a.zero_lag,
                         auto_orientation=not a.no_auto_orientation,
-                        expected_reps=a.reps,
+                        expected_reps=a.reps, trim=not a.no_trim,
                         height_cm=a.height, weight_kg=a.weight, chair_h_cm=a.chair)
 
     if "error" in m:
@@ -250,6 +254,11 @@ def main():
     print("\n" + "=" * 58)
     print("STS 지표")
     print("=" * 58)
+    tr = m.get("trim")
+    if tr and tr.get("trimmed"):
+        print(f"  [트리밍] {tr['start_s']}s ~ {tr['end_s']}s 만 사용 "
+              f"({tr['kept_span_s']}초 / 원본 {round(tr['orig_frames']/fps,1)}초, "
+              f"검출률 {int(tr['detect_rate']*100)}%)")
     q = m.get("qc")
     if q:
         mark = "통과" if q.get("ok") else "실패"

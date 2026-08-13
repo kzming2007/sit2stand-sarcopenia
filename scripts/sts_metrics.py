@@ -178,7 +178,8 @@ def get_angle(A, B, C, data):
 
 # ── 국면 분할 ────────────────────────────────────────────────────────
 
-def get_segments(res, framerate=30, magnitude=1.0, magnitude_loc=1.0):
+def get_segments(res, framerate=30, magnitude=1.0, magnitude_loc=1.0,
+                 generalize=False):
     """(코_y + 목_y)/2 로 기립(ups)·착석(downs) 시점을 찾는다."""
     ind_y = ((res[:, NOSE * 3 + 1] + res[:, NECK * 3 + 1]) / 2).astype(float)
     x = np.arange(len(ind_y))
@@ -192,7 +193,18 @@ def get_segments(res, framerate=30, magnitude=1.0, magnitude_loc=1.0):
     ups = np.sort(ups[:, 0].astype(int))
     downs = np.sort(downs[:, 0].astype(int))
 
-    if (len(downs) <= 5 and len(ups) == 5) or (len(downs) <= 4 and len(ups) == 4):
+    # 원 코드는 `ups == 5` 또는 `ups == 4` 로 하드코딩돼 있다. 5회 프로토콜을
+    # 전제한 것이라 6회 이상에서는 마지막 착석이 보완되지 않는다
+    # (실측: Kinect 6회 녹화에서 기립 6 / 착석 5 로 QC 실패).
+    #
+    # 조건을 `downs <= ups` 로 일반화해봤더니 **논문 재현이 깨졌다** —
+    # time 이 r=1.0000 -> 0.9761, right_knee_max 가 0.8932 로 떨어졌다.
+    # 5회 데이터에도 영향이 있다는 뜻이다. 따라서 기본값은 원 코드 그대로 두고,
+    # 반복 수를 아는 자체 데이터에서만 `generalize=True` 로 켠다.
+    fire = ((len(downs) <= len(ups)) if generalize else
+            ((len(downs) <= 5 and len(ups) == 5)
+             or (len(downs) <= 4 and len(ups) == 4)))
+    if fire:
         if ups.max() > downs.max():
             tail = ind_s[ups.max():ups.max() + (ups[-1] - ups[-2])]
             if tail.size:
@@ -415,7 +427,95 @@ def alcazar_power(height_cm, weight_kg, chair_h_cm, total_time_s,
             "alcazar_rel_power_Wkg": float(p / weight_kg)}
 
 
-def select_magnitude(res, framerate, expected_reps=5, grid=None):
+def auto_trim(traj, framerate, margin_s=1.5, win_s=1.5, rel_thresh=0.30,
+              merge_gap_s=2.5):
+    """준비·대기·정리 구간을 잘라내고 실제 동작 구간만 남긴다.
+
+    왜 필요한가 — 촬영은 녹화 버튼을 누르고 걸어가 앉는 시간, 끝나고 정리하는
+    시간을 포함한다. 실측 예: 62초 영상에서 실제 5회 동작은 10초뿐이었고,
+    나머지 52초가 신호 범위를 지배해 극값 검출이 통째로 실패했다
+    (STS 봉우리 0.4 vs 전체 범위 3.4, 검출 문턱 1.7).
+
+    논문은 이를 피험자별 `tofix` crop 구간 지정(49명)으로 손으로 처리했다.
+    본 함수는 그 개입을 자동화한다.
+
+    **방법**: STS 는 초당 약 0.5회의 진동이고 준비·정리는 느린 드리프트다.
+    따라서 이동평균으로 드리프트를 뺀 뒤 국소 표준편차로 진동 구간을 찾는다.
+    드리프트를 빼지 않으면 보간된 미검출 구간의 가파른 램프가 오히려 더 큰
+    표준편차를 내어 엉뚱한 구간이 선택된다(실측으로 확인).
+
+    반복 횟수·시간 같은 결과 지표는 선택에 쓰지 않는다.
+
+    반환: (시작 인덱스, 끝 인덱스, 진단 dict)
+    """
+    raw = np.asarray(traj, float)
+    n = len(raw)
+    nose_y, neck_y = raw[:, NOSE * 3 + 1], raw[:, NECK * 3 + 1]
+    det = np.isfinite(nose_y) & np.isfinite(neck_y)
+    if det.sum() < win_s * framerate * 3:
+        return 0, n, {"trimmed": False, "reason": "검출 프레임 부족"}
+
+    idx = np.where(det)[0]
+    lo0, hi0 = int(idx.min()), int(idx.max()) + 1
+    sig = fill_nan(((nose_y + neck_y) / 2)[lo0:hi0])
+    det_l = det[lo0:hi0]
+    m = len(sig)
+
+    def _roll(v, w):
+        w = max(int(w), 3)
+        pad = np.pad(v, (w // 2, w - w // 2 - 1), mode="edge")
+        c1 = np.convolve(pad, np.ones(w) / w, mode="valid")
+        c2 = np.convolve(pad ** 2, np.ones(w) / w, mode="valid")
+        return c1[:len(v)], np.sqrt(np.maximum(c2[:len(v)] - c1[:len(v)] ** 2, 0))
+
+    slow, _ = _roll(sig, 3.0 * framerate)      # 느린 드리프트
+    _, roll = _roll(sig - slow, win_s * framerate)
+    roll[~det_l] = 0.0                          # 미검출 구간은 활동이 아니다
+    if roll.max() <= 0:
+        return lo0, hi0, {"trimmed": False, "reason": "진동 없음"}
+
+    active = roll > roll.max() * rel_thresh
+
+    # 연속 활동 구간을 모으되, **짧은 공백은 이어 붙인다.**
+    # 반복 사이에는 잠시 정지하므로 활동도가 순간적으로 떨어진다. 이어 붙이지
+    # 않으면 5회 중 2회분만 잡혀 시간이 절반 이하로 나온다(실측으로 확인).
+    runs = []
+    i = 0
+    while i < m:
+        if active[i]:
+            j = i
+            while j + 1 < m and active[j + 1]:
+                j += 1
+            runs.append([i, j])
+            i = j + 1
+        else:
+            i += 1
+    if not runs:
+        return lo0, hi0, {"trimmed": False, "reason": "활동 구간 없음"}
+
+    gap = int(merge_gap_s * framerate)
+    merged = [runs[0]]
+    for a0, b0 in runs[1:]:
+        if a0 - merged[-1][1] <= gap:
+            merged[-1][1] = b0
+        else:
+            merged.append([a0, b0])
+    best = max(merged, key=lambda r: r[1] - r[0])
+
+    mg = int(margin_s * framerate)
+    a, b = max(best[0] - mg, 0), min(best[1] + 1 + mg, m)
+    lo, hi = lo0 + a, lo0 + b
+    return lo, hi, {
+        "trimmed": True,
+        "orig_frames": n, "kept_frames": hi - lo,
+        "kept_span_s": round((hi - lo) / framerate, 2),
+        "start_s": round(lo / framerate, 2), "end_s": round(hi / framerate, 2),
+        "detect_rate": round(float(det.mean()), 3),
+    }
+
+
+def select_magnitude(res, framerate, expected_reps=5, grid=None,
+                     generalize=True):
     """평활 강도 `magnitude` 를 자동 선택한다.
 
     왜 필요한가 — 논문은 이 값을 피험자별로 손으로 바꿨다(`k4Zz5q1I` 0.1,
@@ -433,7 +533,8 @@ def select_magnitude(res, framerate, expected_reps=5, grid=None):
     hits = [m for m in grid
             if (lambda u, d: len(u) == expected_reps
                 and len(d) in (expected_reps, expected_reps + 1))(
-                    *get_segments(res, framerate=framerate, magnitude=m))]
+                    *get_segments(res, framerate=framerate, magnitude=m,
+                                  generalize=generalize))]
     if not hits:
         return None, 0
     # 연속 구간 중 가장 넓은 곳의 기하중앙값을 고른다. 경계값보다 안정적이다.
@@ -451,12 +552,18 @@ def select_magnitude(res, framerate, expected_reps=5, grid=None):
 
 def compute_metrics(traj, framerate=30, magnitude=1.0, zero_lag=False,
                     paper_compat=True, flip_y=True, auto_orientation=True,
-                    expected_reps=None,
+                    expected_reps=None, trim=False,
                     height_cm=None, weight_kg=None, chair_h_cm=None):
     """궤적 (프레임, 75) -> 지표 dict. process_subject 의 순서를 그대로 따른다."""
     res = np.asarray(traj, dtype=float).copy()
     if res.ndim != 2 or res.shape[1] != N_KP * 3:
         raise ValueError(f"(프레임, {N_KP*3}) 형태여야 한다. 현재 {res.shape}")
+
+    # 0) 준비·정리 구간 자동 제거 (논문의 tofix crop 자동화)
+    trim_info = None
+    if trim:
+        lo, hi, trim_info = auto_trim(res, framerate)
+        res = res[lo:hi]
 
     # 1) Y축 반전 — 영상 좌표는 y가 아래로 증가한다
     if flip_y:
@@ -492,10 +599,14 @@ def compute_metrics(traj, framerate=30, magnitude=1.0, zero_lag=False,
             qc["magnitude_selected"] = round(sel, 4)
     qc["magnitude_used"] = round(float(magnitude), 4)
 
-    ups, downs = get_segments(res, framerate=framerate, magnitude=magnitude)
+    # 반복 수를 아는 경우(자체 데이터)에만 착석 보완을 일반화한다.
+    ups, downs = get_segments(res, framerate=framerate, magnitude=magnitude,
+                              generalize=bool(expected_reps))
 
     out = {"orientation": orientation, "framerate": framerate,
            "n_ups": len(ups), "n_downs": len(downs)}
+    if trim_info:
+        out["trim"] = trim_info
     if expected_reps:
         qc.setdefault("ok", len(ups) == expected_reps
                       and len(downs) in (expected_reps, expected_reps + 1))
