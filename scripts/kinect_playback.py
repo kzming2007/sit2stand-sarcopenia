@@ -168,7 +168,9 @@ def main():
 
     print("\n[2/3] 전처리 — BODY_25 투영 -> 보간 -> 6Hz filtfilt -> 정규화")
     print("[3/3] 국면 분할 및 지표 산출")
-    m = compute_metrics(traj, framerate=fps, zero_lag=True,
+    # filter_all=False — Kinect 좌표는 mm 이고 음수가 나올 수 있다.
+    # 픽셀 전제의 전체 임계 필터를 적용하면 좌표가 통째로 사라진다.
+    m = compute_metrics(traj, framerate=fps, zero_lag=True, filter_all=False,
                         expected_reps=a.reps, trim=not a.no_trim,
                         height_cm=a.height, weight_kg=a.weight,
                         chair_h_cm=a.chair)

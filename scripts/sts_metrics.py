@@ -552,7 +552,7 @@ def select_magnitude(res, framerate, expected_reps=5, grid=None,
 
 def compute_metrics(traj, framerate=30, magnitude=1.0, zero_lag=False,
                     paper_compat=True, flip_y=True, auto_orientation=True,
-                    expected_reps=None, trim=False,
+                    expected_reps=None, trim=False, filter_all=True,
                     height_cm=None, weight_kg=None, chair_h_cm=None):
     """궤적 (프레임, 75) -> 지표 dict. process_subject 의 순서를 그대로 따른다."""
     res = np.asarray(traj, dtype=float).copy()
@@ -580,7 +580,21 @@ def compute_metrics(traj, framerate=30, magnitude=1.0, zero_lag=False,
             res = swap_lr(res)
 
     # 3) 저신뢰 제거 후 보간
-    res[res < 0.5] = np.nan
+    #
+    # 주의 — 논문 코드는 `res[res < 0.5] = NaN` 을 배열 전체에 건다. OpenPose 의
+    # 픽셀 좌표는 항상 양수라 사실상 신뢰도 열만 걸러지기 때문이다.
+    # **Kinect 는 카메라 중심 기준 mm 라 좌표가 음수일 수 있다.** 그대로 적용하면
+    # 좌표가 통째로 NaN 이 되고, 보간이 그 자리를 채워 **그럴싸하지만 틀린 값**이
+    # 나온다(실측: Kinect x 가 -1011~-110mm 로 전부 음수였다).
+    # 이번 자료는 방향 판정이 L 로 나와 X 반전이 걸리면서 우연히 살아났다.
+    # 픽셀이 아닌 입력에는 filter_all=False 로 신뢰도 열만 거른다.
+    if filter_all:
+        res[res < 0.5] = np.nan
+    else:
+        conf = res[:, 2::3]
+        conf[conf < 0.5] = np.nan
+        res[:, 2::3] = conf
+        res[~np.isfinite(res[:, 2::3]).repeat(3, axis=1)] = np.nan
     res = np.apply_along_axis(fill_nan, 0, res)
 
     # 4) 1차 정규화 -> 5) 국면 분할 (평활 이전)
