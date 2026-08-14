@@ -1,0 +1,46 @@
+================================================================================================
+Phase 3 — 스마트폰 vs Kinect 지표별 일치도 (G3)
+================================================================================================
+  차이 = 스마트폰 − Kinect.  양수면 스마트폰이 크게 읽음
+  신뢰수준 95%
+
+  지표                         n  ICC(2,1)             95% CI     등급        편향             95% LoA     RMSE       r
+  --------------------------------------------------------------------------------------------
+  time                       1       nan                n/a   판정불가      +nan                 n/a      nan     nan
+  time_sit2stand             1       nan                n/a   판정불가      +nan                 n/a      nan     nan
+  time_stand2sit             1       nan                n/a   판정불가      +nan                 n/a      nan     nan
+  time_sd                    1       nan                n/a   판정불가      +nan                 n/a      nan     nan
+  trunk_lean_max             1       nan                n/a   판정불가      +nan                 n/a      nan     nan
+  trunk_lean_range_mean      1       nan                n/a   판정불가      +nan                 n/a      nan     nan
+  right_knee_range_mean      1       nan                n/a   판정불가      +nan                 n/a      nan     nan
+  left_knee_range_mean       1       nan                n/a   판정불가      +nan                 n/a      nan     nan
+  right_hip_range_mean       1       nan                n/a   판정불가      +nan                 n/a      nan     nan
+  left_hip_range_mean        1       nan                n/a   판정불가      +nan                 n/a      nan     nan
+
+  사전등록 기대치 대조 (계획서 §3.7 — 분석 전 확정, 사후 수정 금지)
+  --------------------------------------------------------------------------------------------
+    time                     기대 0.90~1.00   실측 nan   → 예측 벗어남
+      근거: Boswell 2023 마커기반 대비 r=0.997
+    time_sit2stand           기대 0.80~0.95   실측 nan   → 예측 벗어남
+      근거: 국면 분할 오차 추가
+    time_stand2sit           기대 0.80~0.95   실측 nan   → 예측 벗어남
+      근거: 국면 분할 오차 추가
+    trunk_lean_max           기대 0.50~0.80   실측 nan   → 예측 벗어남
+      근거: Boswell 2023 요추 굴곡 r=0.583
+    trunk_lean_range_mean    기대 0.50~0.80   실측 nan   → 예측 벗어남
+      근거: 동상
+    right_knee_range_mean    기대 0.75~0.90   실측 nan   → 예측 벗어남
+      근거: Jo 2022 정면 스쿼트 무릎 ICC 0.90-0.91
+    left_knee_range_mean     기대 0.75~0.90   실측 nan   → 예측 벗어남
+      근거: 동상
+    right_hip_range_mean     기대 0.50~0.75   실측 nan   → 예측 벗어남
+      근거: Jo 2022 가려진 고관절 ICC 0.64. 최약
+    left_hip_range_mean      기대 0.50~0.75   실측 nan   → 예측 벗어남
+      근거: 동상
+
+  해석 안내
+  --------------------------------------------------------------------------------------------
+    ICC    >0.90 높음 / 0.75~0.90 보통 / <0.75 낮음  (Koo & Li 2016)
+    편향   체계적 차이. 일정하면 보정 가능하다
+    LoA    개별 측정이 벗어나는 범위. 임상적으로는 ICC보다 중요할 수 있다
+    r      상관은 일치가 아니다. 항상 5도 큰 경우에도 r=1.000 이 나온다

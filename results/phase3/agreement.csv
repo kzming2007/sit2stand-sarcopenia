@@ -1,0 +1,11 @@
+metric,n,icc,lo,hi,bias,loa_lo,loa_hi,rmse,mae,pearson,prop_bias_slope,prop_bias_p,grade,pre_lo,pre_hi,pre_basis,pre_hit
+time,1,,,,,,,,,,,,판정불가,0.9,1.0,Boswell 2023 마커기반 대비 r=0.997,False
+time_sit2stand,1,,,,,,,,,,,,판정불가,0.8,0.95,국면 분할 오차 추가,False
+time_stand2sit,1,,,,,,,,,,,,판정불가,0.8,0.95,국면 분할 오차 추가,False
+time_sd,1,,,,,,,,,,,,판정불가,,,,
+trunk_lean_max,1,,,,,,,,,,,,판정불가,0.5,0.8,Boswell 2023 요추 굴곡 r=0.583,False
+trunk_lean_range_mean,1,,,,,,,,,,,,판정불가,0.5,0.8,동상,False
+right_knee_range_mean,1,,,,,,,,,,,,판정불가,0.75,0.9,Jo 2022 정면 스쿼트 무릎 ICC 0.90-0.91,False
+left_knee_range_mean,1,,,,,,,,,,,,판정불가,0.75,0.9,동상,False
+right_hip_range_mean,1,,,,,,,,,,,,판정불가,0.5,0.75,Jo 2022 가려진 고관절 ICC 0.64. 최약,False
+left_hip_range_mean,1,,,,,,,,,,,,판정불가,0.5,0.75,동상,False
