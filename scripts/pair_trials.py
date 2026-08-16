@@ -157,9 +157,9 @@ def main():
     print(f"  검출률          폰 {int(r['phone_detect']*100)}% / "
           f"Kinect {int(r['kinect_detect']*100)}%")
     print(f"  판정            {'동일 사건으로 판단' if r['ok'] else '확인 필요'}")
-    print(f"    * 미세정렬은 주기의 정수배만큼 모호하다. trial 짝짓기 QC 로는"
-          f" 충분하나
-      프레임 단위 정렬이 필요하면 박수 동작을 따로 검출할 것")
+    print("    * 미세정렬은 주기의 정수배만큼 모호하다. trial 짝짓기 QC 로는 "
+          "충분하나,")
+    print("      프레임 단위 정렬이 필요하면 박수 동작을 따로 검출할 것")
     print()
     print("  * 폰이 Kinect 보다 이 시간만큼 늦게 시작했다는 뜻이다"
           if r["lag_s"] > 0 else
