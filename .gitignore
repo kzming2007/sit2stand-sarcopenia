@@ -31,3 +31,6 @@ docs/2026 바이오헬스 경진대회_신청서.pdf
 
 # 변형 분석 특징 캐시 (재생성 가능)
 results/pipeline_variants_features.csv
+
+# 배치 실행 로그 (재생성 가능)
+logs/*.log
