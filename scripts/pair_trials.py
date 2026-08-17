@@ -43,6 +43,10 @@ PAIR_METRICS = [
     "trunk_lean_max", "trunk_lean_range_mean",
     "right_knee_range_mean", "left_knee_range_mean",
     "right_hip_range_mean", "left_hip_range_mean",
+    # Alcazar 파워는 시간에서 파생되므로 시간 일치도를 그대로 따라온다.
+    # 사전등록 기대치표(phase3_agreement.PREREGISTERED)에 0.85~1.00 으로
+    # 등록돼 있으므로 여기 없으면 평가가 영원히 불가능하다.
+    "alcazar_rel_power_Wkg", "alcazar_power_W",
 ]
 
 
@@ -135,35 +139,44 @@ def main():
     ap.add_argument("--out", help="짝 CSV 저장 경로")
     a = ap.parse_args()
 
-    if not (a.phone and a.kinect):
+    # 궤적 없이 지표 JSON 만 있어도 짝 CSV 를 만들 수 있게 한다.
+    # 원본 영상이 없는 곳에서 PAIR_METRICS 를 늘려 재생성할 때 필요하다.
+    json_only = bool(a.phone_json and a.kinect_json and not (a.phone and a.kinect))
+    if not (a.phone and a.kinect) and not json_only:
         ap.print_help()
         return 0
+    if json_only:
+        print(f"지표 JSON 만으로 짝 생성 (동기화 확인 생략) — {a.subject}/{a.id}")
 
-    print("=" * 66)
-    print(f"동기화 확인 — {a.subject} / {a.id}")
-    print("=" * 66)
-    ph = np.load(a.phone)
-    kn = np.load(a.kinect)
-    print(f"  폰    {len(ph):5d} 프레임 ({len(ph)/a.fps:5.1f}초)")
-    print(f"  Kinect {len(kn):5d} 프레임 ({len(kn)/a.fps:5.1f}초)")
+    if not json_only:
+        print("=" * 66)
+        print(f"동기화 확인 — {a.subject} / {a.id}")
+        print("=" * 66)
+        ph = np.load(a.phone)
+        kn = np.load(a.kinect)
+        print(f"  폰    {len(ph):5d} 프레임 ({len(ph)/a.fps:5.1f}초)")
+        print(f"  Kinect {len(kn):5d} 프레임 ({len(kn)/a.fps:5.1f}초)")
 
-    r = estimate_lag(ph, kn, a.fps)
-    print()
-    print(f"  추정 시차       {r['lag_s']:+.2f}초 ({r['lag_frames']:+d} 프레임)")
-    print(f"    활동구간 차이  {r['coarse_s']:+.2f}초  + 미세정렬 {r['fine_s']:+.2f}초")
-    print(f"  활동 구간 길이   폰 {r['phone_span_s']}초 / Kinect {r['kinect_span_s']}초")
-    print(f"  상관 피크       {r['peak']:.4f}   (배경 99백분위 {r['bg99']:.4f}, "
-          f"비 {r['ratio']}배)")
-    print(f"  검출률          폰 {int(r['phone_detect']*100)}% / "
-          f"Kinect {int(r['kinect_detect']*100)}%")
-    print(f"  판정            {'동일 사건으로 판단' if r['ok'] else '확인 필요'}")
-    print("    * 미세정렬은 주기의 정수배만큼 모호하다. trial 짝짓기 QC 로는 "
-          "충분하나,")
-    print("      프레임 단위 정렬이 필요하면 박수 동작을 따로 검출할 것")
-    print()
-    print("  * 폰이 Kinect 보다 이 시간만큼 늦게 시작했다는 뜻이다"
-          if r["lag_s"] > 0 else
-          "  * Kinect 가 폰보다 이 시간만큼 늦게 시작했다는 뜻이다")
+        r = estimate_lag(ph, kn, a.fps)
+        print()
+        print(f"  추정 시차       {r['lag_s']:+.2f}초 ({r['lag_frames']:+d} 프레임)")
+        print(f"    활동구간 차이  {r['coarse_s']:+.2f}초  + 미세정렬 "
+              f"{r['fine_s']:+.2f}초")
+        print(f"  활동 구간 길이   폰 {r['phone_span_s']}초 / "
+              f"Kinect {r['kinect_span_s']}초")
+        print(f"  상관 피크       {r['peak']:.4f}   "
+              f"(배경 99백분위 {r['bg99']:.4f}, 비 {r['ratio']}배)")
+        print(f"  검출률          폰 {int(r['phone_detect']*100)}% / "
+              f"Kinect {int(r['kinect_detect']*100)}%")
+        print(f"  판정            "
+              f"{'동일 사건으로 판단' if r['ok'] else '확인 필요'}")
+        print("    * 미세정렬은 주기의 정수배만큼 모호하다. trial 짝짓기 QC 로는 "
+              "충분하나,")
+        print("      프레임 단위 정렬이 필요하면 박수 동작을 따로 검출할 것")
+        print()
+        print("  * 폰이 Kinect 보다 이 시간만큼 늦게 시작했다는 뜻이다"
+              if r["lag_s"] > 0 else
+              "  * Kinect 가 폰보다 이 시간만큼 늦게 시작했다는 뜻이다")
 
     if a.out and a.phone_json and a.kinect_json:
         import csv

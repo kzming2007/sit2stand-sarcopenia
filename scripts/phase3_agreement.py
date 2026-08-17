@@ -34,6 +34,14 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 
+# cp949 콘솔에서 em-dash 같은 문자로 UnicodeEncodeError 가 나 죽는다.
+# 표준 출력만 UTF-8 로 바꾸고, 변환 불가 문자는 대체한다.
+for _s in (sys.stdout, sys.stderr):
+    try:
+        _s.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:                                      # noqa: BLE001
+        pass
+
 # 계획서 §3.4 의 신뢰도 등급 경계
 GRADE_BOUNDS = [(0.90, "높음"), (0.75, "보통"), (0.00, "낮음")]
 
@@ -332,8 +340,12 @@ def selftest():
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--pairs", help="long 형식 CSV: subject,trial,metric,phone,kinect")
-    ap.add_argument("--plot", help="Bland-Altman 그림 저장 디렉터리")
-    ap.add_argument("--out", default="results/phase3", help="결과 저장 위치")
+    ap.add_argument("--plot", nargs="?", const="", default=None,
+                    help="Bland-Altman 그림 저장 디렉터리. 경로 없이 --plot 만 "
+                         "주면 --out 과 같은 곳에 그린다")
+    ap.add_argument("--out", help="결과 저장 위치. 생략하면 입력 파일명에서 "
+                                  "자동으로 정한다(results/phase3_<이름>). "
+                                  "고정 기본값을 쓰면 다른 세션 결과를 덮는다")
     ap.add_argument("--alpha", type=float, default=0.05)
     ap.add_argument("--selftest", action="store_true")
     a = ap.parse_args()
@@ -344,6 +356,13 @@ def main():
         ap.print_help()
         print("\n  G2 데이터가 아직 없다면 --selftest 로 구현을 확인할 수 있다.")
         return 0
+
+    # 출력 경로를 입력 파일명에서 유도한다. 고정 기본값이면 세션마다 덮어써서
+    # 실제로 2회 유실이 발생했다(랩실 세션 기록).
+    if not a.out:
+        stem = os.path.splitext(os.path.basename(a.pairs))[0]
+        stem = stem[len("g2_pairs_"):] if stem.startswith("g2_pairs_") else stem
+        a.out = os.path.join("results", f"phase3_{stem}")
 
     df = pd.read_csv(a.pairs)
     need = {"metric", "phone", "kinect"}
@@ -369,8 +388,10 @@ def main():
         f.write(txt + "\n")
     print(f"\n저장: {a.out}/agreement.csv, agreement.txt")
 
-    if a.plot:
-        print(f"그림 {len(make_plots(df, a.plot))}개: {a.plot}")
+    # --plot 에 경로를 안 주면 --out 과 같은 곳에 그린다
+    if a.plot is not None:
+        pdir = a.plot if isinstance(a.plot, str) and a.plot else a.out
+        print(f"그림 {len(make_plots(df, pdir))}개: {pdir}")
     return 0
 
 
