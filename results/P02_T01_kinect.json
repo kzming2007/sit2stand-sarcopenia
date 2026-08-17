@@ -574,6 +574,6 @@
   "hip_range_asym": 0.12078904547175999,
   "knee_angvel_asym": 1.5501271209807124,
   "awgs_low_function": false,
-  "alcazar_power_W": null,
-  "alcazar_rel_power_Wkg": null
+  "alcazar_power_W": 250.59696996466434,
+  "alcazar_rel_power_Wkg": 3.977729681978799
 }
