@@ -553,8 +553,14 @@ def select_magnitude(res, framerate, expected_reps=5, grid=None,
 def compute_metrics(traj, framerate=30, magnitude=1.0, zero_lag=False,
                     paper_compat=True, flip_y=True, auto_orientation=True,
                     expected_reps=None, trim=False, filter_all=True,
-                    height_cm=None, weight_kg=None, chair_h_cm=None):
-    """궤적 (프레임, 75) -> 지표 dict. process_subject 의 순서를 그대로 따른다."""
+                    height_cm=None, weight_kg=None, chair_h_cm=None,
+                    trace=None):
+    """궤적 (프레임, 75) -> 지표 dict. process_subject 의 순서를 그대로 따른다.
+
+    `trace` 에 dict 를 넘기면 국면 분할에 쓴 신호와 시점을 담아준다
+    (`signal`, `ups`, `downs`). **시각화 전용이며 계산에는 영향을 주지
+    않는다.** G5 데모가 보고값과 어긋난 그림을 그리지 않도록 하는 장치다.
+    """
     res = np.asarray(traj, dtype=float).copy()
     if res.ndim != 2 or res.shape[1] != N_KP * 3:
         raise ValueError(f"(프레임, {N_KP*3}) 형태여야 한다. 현재 {res.shape}")
@@ -616,6 +622,11 @@ def compute_metrics(traj, framerate=30, magnitude=1.0, zero_lag=False,
     # 반복 수를 아는 경우(자체 데이터)에만 착석 보완을 일반화한다.
     ups, downs = get_segments(res, framerate=framerate, magnitude=magnitude,
                               generalize=bool(expected_reps))
+
+    if trace is not None:
+        trace["signal"] = ((res[:, NOSE * 3 + 1] + res[:, NECK * 3 + 1]) / 2
+                           ).astype(float).copy()
+        trace["ups"], trace["downs"] = ups.copy(), downs.copy()
 
     out = {"orientation": orientation, "framerate": framerate,
            "n_ups": len(ups), "n_downs": len(downs)}

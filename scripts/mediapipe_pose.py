@@ -183,7 +183,10 @@ def extract(video, kind="full", min_conf=0.5, progress=True):
                 n_det += 1
             rows.append(landmarks_to_body25(lms, w, h))
             i += 1
-            if progress and total and i % 60 == 0:
+            # progress 에 함수를 넘기면 그쪽으로 알린다 (Streamlit 진행 표시용)
+            if callable(progress):
+                progress(i, total, n_det)
+            elif progress and total and i % 60 == 0:
                 print(f"      {i}/{total} 프레임  검출 {n_det}", flush=True)
     cap.release()
     if tmpdir:
