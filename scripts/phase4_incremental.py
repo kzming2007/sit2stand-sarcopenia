@@ -14,12 +14,15 @@ Phase 4 — 동작 품질 지표의 증분가치 분석
 
 보고 지표는 절대 성능이 아니라 ΔR² / ΔAUC (동일 fold 쌍 비교).
 
-주의: G3(Phase 3 신뢰도 등급)가 미완료 상태이므로 이것은 1차 pass다.
-      Phase 3 완료 후 G3 통과 지표만으로 재실행할 것. 계획서 §7 우선순위 A 참조.
+2026-08-21: G3 완료로 2차 pass 가능해졌다. `--g3` 를 주면 등급이 통과인
+지표만 M2 에 넣는다. 운동학 12개 중 11개가 '낮음'이라 M2 가 1개로 줄고,
+낙상 이력의 ΔM2-M1 이 -0.011 -> +0.037 로 뒤집힌다.
+상세: docs/20260821_Phase4_2차pass_신뢰도기반_특징선별.md
 
 실행:
-    python scripts/phase4_incremental.py
-    python scripts/phase4_incremental.py --repeats 20
+    python scripts/phase4_incremental.py --tag _pass1              # 1차
+    python scripts/phase4_incremental.py --tag _pass2 \
+           --g3 results/phase3_5subj_ext/agreement.csv             # 2차
 """
 
 import argparse
@@ -220,16 +223,41 @@ def paired_delta(a, b):
 
 # ---------------------------------------------------------------- 실행
 
+def g3_keep(path, allow=("높음", "보통")):
+    """G3 산출물에서 등급이 `allow` 안에 드는 지표 이름만 돌려준다.
+
+    2차 pass 의 핵심이다 — 계획서 §7 우선순위 A. 1차 pass 는 G3 가 없어서
+    이론 근거만으로 M2 를 구성했다. 이제 자체 촬영 50 trial 로 지표별
+    신뢰도가 나왔으므로, **재현되지 않는 지표를 예측 모델에 넣지 않는다.**
+    """
+    import csv as _csv
+    keep, drop = set(), {}
+    with open(path, encoding="utf-8") as f:
+        for r in _csv.DictReader(f):
+            (keep.add(r["metric"]) if r["grade"] in allow
+             else drop.__setitem__(r["metric"], (r["grade"], float(r["icc"]))))
+    return keep, drop
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--repeats", type=int, default=10)
     ap.add_argument("--model", default="linear", choices=["linear", "forest"])
+    ap.add_argument("--g3", help="G3 agreement.csv 경로. 주면 2차 pass 로 "
+                                 "동작한다 — 등급 통과 지표만 M2 에 넣는다")
+    ap.add_argument("--g3-allow", default="높음,보통",
+                    help="통과로 볼 등급. 기본 '높음,보통'")
+    ap.add_argument("--tag", default="", help="산출 파일 접미사")
     args = ap.parse_args()
 
     os.makedirs(OUT, exist_ok=True)
     dc = load_data()
 
     kinematic = QUALITY_KINEMATIC + [p[0] for p in ASYM_PAIRS]
+    g3_drop = {}
+    if args.g3:
+        keep, g3_drop = g3_keep(args.g3, tuple(args.g3_allow.split(",")))
+        kinematic = [c for c in kinematic if c in keep]
     sets = {
         "M0": DEMO,
         "M1": DEMO + STOPWATCH,
@@ -251,6 +279,20 @@ def main():
     for k, v in sets.items():
         print(f"       {k}: {len(v):2d}개 특징")
     print()
+
+    if args.g3:
+        print("-" * 74)
+        print(f"2차 pass — G3 등급 '{args.g3_allow}' 만 M2 에 넣는다")
+        print("-" * 74)
+        print(f"  기준표 : {args.g3}")
+        print(f"  통과   : {', '.join(kinematic) if kinematic else '(없음)'}")
+        cut = [(m, g, i) for m, (g, i) in sorted(g3_drop.items(),
+                                                 key=lambda kv: -kv[1][1])
+               if m in QUALITY_KINEMATIC + [p[0] for p in ASYM_PAIRS]]
+        print(f"  제외   : {len(cut)}개")
+        for m, g, i in cut:
+            print(f"           {m:24s} {g}  ICC {i:+.3f}")
+        print()
 
     # --- 검증 게이트: 선행 논문 단변량 결과 재현 여부 ---
     from scipy import stats
@@ -309,13 +351,21 @@ def main():
                 s = scores[name]
                 print(f"  {name:6s} {s.mean():8.4f} ± {s.std():.4f}")
             print()
+            # 델타는 지금까지 화면에만 찍히고 JSON 에는 안 들어갔다.
+            # `.json` 과 `.txt` 가 어긋나는 원인이었으므로 함께 담는다.
+            deltas = {}
             for a, b in [("M0", "M1"), ("M1", "M2"), ("M2", "M3"), ("M0", "M3")]:
                 m, lo, hi = paired_delta(scores[a], scores[b])
                 sig = "유의" if lo > 0 else ("역방향" if hi < 0 else "불확실")
                 print(f"  Δ{b}-{a}  R² {m:+.4f}  95%CI [{lo:+.4f}, {hi:+.4f}]  {sig}")
-            results[target] = {k: {"r2_mean": float(v.mean()),
-                                   "r2_sd": float(v.std())}
-                               for k, v in scores.items()}
+                deltas[f"{b}-{a}"] = {"metric": "r2", "delta": float(m),
+                                      "lo": float(lo), "hi": float(hi),
+                                      "verdict": sig}
+            results[target] = {"scores": {k: {"r2_mean": float(v.mean()),
+                                              "r2_sd": float(v.std())}
+                                          for k, v in scores.items()},
+                               "deltas": deltas,
+                               "n_features": {k: len(v) for k, v in sets.items()}}
         else:
             print(f"  {'모델':6s} {'ROC-AUC':>18s} {'PR-AUC':>18s}")
             for name in sets:
@@ -323,14 +373,20 @@ def main():
                 print(f"  {name:6s} {s[:,0].mean():8.4f} ± {s[:,0].std():.4f}"
                       f"   {s[:,1].mean():8.4f} ± {s[:,1].std():.4f}")
             print()
+            deltas = {}
             for a, b in [("M0", "M1"), ("M1", "M2"), ("M2", "M3"), ("M0", "M3")]:
                 m, lo, hi = paired_delta(scores[a][:, 0], scores[b][:, 0])
                 sig = "유의" if lo > 0 else ("역방향" if hi < 0 else "불확실")
                 print(f"  Δ{b}-{a}  AUC {m:+.4f}  95%CI [{lo:+.4f}, {hi:+.4f}]  {sig}")
-            results[target] = {k: {"auc_mean": float(v[:,0].mean()),
-                                   "auc_sd": float(v[:,0].std()),
-                                   "prauc_mean": float(v[:,1].mean())}
-                               for k, v in scores.items()}
+                deltas[f"{b}-{a}"] = {"metric": "auc", "delta": float(m),
+                                      "lo": float(lo), "hi": float(hi),
+                                      "verdict": sig}
+            results[target] = {"scores": {k: {"auc_mean": float(v[:, 0].mean()),
+                                              "auc_sd": float(v[:, 0].std()),
+                                              "prauc_mean": float(v[:, 1].mean())}
+                                          for k, v in scores.items()},
+                               "deltas": deltas,
+                               "n_features": {k: len(v) for k, v in sets.items()}}
         print()
 
     # --- 50세 이상 하위군 (계획서 §3.5 (d)) ---
@@ -397,9 +453,10 @@ def main():
     print("  -> 연령이 OA 를 거의 설명하므로 다른 특징이 기여할 여지가 좁다.")
     print()
 
-    with open(f"{OUT}/phase4_{args.model}.json", "w", encoding="utf-8") as f:
+    with open(f"{OUT}/phase4_{args.model}{args.tag}.json", "w",
+              encoding="utf-8") as f:
         json.dump(results, f, ensure_ascii=False, indent=2)
-    print(f"저장: {OUT}/phase4_{args.model}.json")
+    print(f"저장: {OUT}/phase4_{args.model}{args.tag}.json")
 
 
 if __name__ == "__main__":

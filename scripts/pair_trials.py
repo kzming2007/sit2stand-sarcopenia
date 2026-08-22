@@ -47,6 +47,19 @@ PAIR_METRICS = [
     # 사전등록 기대치표(phase3_agreement.PREREGISTERED)에 0.85~1.00 으로
     # 등록돼 있으므로 여기 없으면 평가가 영원히 불가능하다.
     "alcazar_rel_power_Wkg", "alcazar_power_W",
+
+    # ── Phase 4 의 M2(비시간 운동학) 특징 ────────────────────────────
+    # 2차 pass 는 "G3 통과 지표만으로 M2 를 재구성" 하는 것인데, 아래 열들은
+    # 짝짓기 대상이 아니어서 등급이 없었다. 등급 없이 걸러낼 수 없으므로
+    # 여기 추가한다. 값은 이미 산출돼 있어 영상 재처리가 필요 없다.
+    #
+    # **사전등록 대상이 아니다.** 계획서 §3.7 기대치표에 없으므로 이 열들의
+    # 일치도는 탐색적 결과로만 보고한다. 적중/이탈 판정을 붙이지 않는다.
+    "trunk_lean_ang_acc",                      # 실제로는 각속도 (20260810 §3-①)
+    "left_knee_ang_vel", "right_knee_ang_vel",
+    "left_hip_ang_vel", "right_hip_ang_vel",
+    "pelvic_avg_y_speed", "neck_avg_y_speed",
+    "knee_range_asym", "hip_range_asym", "knee_angvel_asym",
 ]
 
 
